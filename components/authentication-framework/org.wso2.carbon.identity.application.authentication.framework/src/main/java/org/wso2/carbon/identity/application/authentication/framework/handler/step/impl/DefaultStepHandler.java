@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthHistory;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
@@ -41,6 +42,8 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -165,8 +168,8 @@ public class DefaultStepHandler implements StepHandler {
                 return;
             }
         }
-        // if dumbMode
-        else if (ConfigurationFacade.getInstance().isDumbMode()) {
+        // If dumbMode is enabled and no previous authenticated IDPs exist we redirect for Home Realm Discovery.
+        else if (ConfigurationFacade.getInstance().isDumbMode() && authenticatedIdPs.isEmpty()) {
 
             if (log.isDebugEnabled()) {
                 log.debug("Executing in Dumb mode");
@@ -376,6 +379,7 @@ public class DefaultStepHandler implements StepHandler {
         String errorMsg = "domain.unknown";
 
         try {
+            request.setAttribute(FrameworkConstants.RequestParams.FLOW_STATUS, AuthenticatorFlowStatus.INCOMPLETE);
             response.sendRedirect(redirectURL + ("?" + context.getContextIdIncludedQueryParams())
                     + "&authenticators=" + URLEncoder.encode(authenticatorNames, "UTF-8") + "&authFailure=true"
                     + "&authFailureMsg=" + errorMsg + "&hrd=true");
@@ -476,7 +480,7 @@ public class DefaultStepHandler implements StepHandler {
         ApplicationAuthenticator authenticator = authenticatorConfig.getApplicationAuthenticator();
 
         if (authenticator == null) {
-            log.error("Authenticator is null");
+            log.error("Authenticator is null for AuthenticatorConfig: " + authenticatorConfig.getName());
             return;
         }
 
@@ -491,6 +495,7 @@ public class DefaultStepHandler implements StepHandler {
             }
 
             if (status == AuthenticatorFlowStatus.INCOMPLETE) {
+                context.setCurrentAuthenticator(authenticator.getName());
                 if (log.isDebugEnabled()) {
                     log.debug(authenticator.getName() + " is redirecting");
                 }
@@ -538,20 +543,29 @@ public class DefaultStepHandler implements StepHandler {
             authenticatedIdPData.addAuthenticator(authenticatorConfig);
             //add authenticated idp data to the session wise map
             context.getCurrentAuthenticatedIdPs().put(idpName, authenticatedIdPData);
+            context.addAuthenticationStepHistory(new AuthHistory(authenticator.getName(), idpName));
 
         } catch (InvalidCredentialsException e) {
             if (log.isDebugEnabled()) {
                 log.debug("A login attempt was failed due to invalid credentials", e);
             }
-            context.setRequestAuthenticated(false);
+            handleFailedAuthentication(request, response, context, authenticatorConfig, e.getUser());
         } catch (AuthenticationFailedException e) {
             log.error(e.getMessage(), e);
-            context.setRequestAuthenticated(false);
+            handleFailedAuthentication(request, response, context, authenticatorConfig, e.getUser());
         } catch (LogoutFailedException e) {
             throw new FrameworkException(e.getMessage(), e);
         }
 
         stepConfig.setCompleted(true);
+    }
+
+    protected void handleFailedAuthentication(HttpServletRequest request,
+                                              HttpServletResponse response,
+                                              AuthenticationContext context,
+                                              AuthenticatorConfig authenticatorConfig,
+                                              User user) {
+        context.setRequestAuthenticated(false);
     }
 
     protected void populateStepConfigWithAuthenticationDetails(StepConfig stepConfig,

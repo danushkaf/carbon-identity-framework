@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.application.authentication.framework.handler.sequence.impl;
 
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -323,6 +324,8 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
 
                     localClaimValues.put(FrameworkConstants.ASSOCIATED_ID, originalExternalIdpSubjectValueForThisStep);
                     localClaimValues.put(FrameworkConstants.IDP_ID, stepConfig.getAuthenticatedIdP());
+                    // Remove role claim from local claims as roles are specifically handled.
+                    localClaimValues.remove(getLocalClaimUriMappedForIdPRoleClaim(externalIdPConfig));
 
                     handleJitProvisioning(originalExternalIdpSubjectValueForThisStep, context,
                             identityProviderMappedUserRolesUnmappedExclusive, localClaimValues);
@@ -489,7 +492,7 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
                         mappedAttrs.put(
                                 spRoleUri,
                                 getServiceProviderMappedUserRoles(sequenceConfig,
-                                Arrays.asList(roles))
+                                        Arrays.asList(roles))
                         );
                     }
 
@@ -710,7 +713,7 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
         Map<String, String> mappedAttrs;
         try {
             mappedAttrs = FrameworkUtils.getClaimHandler().handleClaimMappings(stepConfig, context,
-                                                                               extAttrs, isFederatedClaims);
+                    extAttrs, isFederatedClaims);
             return mappedAttrs;
         } catch (FrameworkException e) {
             log.error("Claim handling failed!", e);
@@ -744,14 +747,14 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
             // framework.
             ThreadLocalProvisioningServiceProvider serviceProvider = new ThreadLocalProvisioningServiceProvider();
             serviceProvider.setServiceProviderName(context.getSequenceConfig()
-                                                           .getApplicationConfig().getApplicationName());
+                    .getApplicationConfig().getApplicationName());
             serviceProvider.setJustInTimeProvisioning(true);
             serviceProvider.setClaimDialect(ApplicationConstants.LOCAL_IDP_DEFAULT_CLAIM_DIALECT);
             serviceProvider.setTenantDomain(context.getTenantDomain());
             IdentityApplicationManagementUtil.setThreadLocalProvisioningServiceProvider(serviceProvider);
 
             FrameworkUtils.getProvisioningHandler().handle(mappedRoles, subjectIdentifier,
-                                                           extAttributesValueMap, userStoreDomain, context.getTenantDomain());
+                    extAttributesValueMap, userStoreDomain, context.getTenantDomain());
 
         } catch (FrameworkException e) {
             log.error("User provisioning failed!", e);
@@ -760,8 +763,10 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
         }
     }
 
+    /*
+       TODO: This needs to be refactored so that there is a separate context object for each authentication step, rather than resetting.
+        */
     protected void resetAuthenticationContext(AuthenticationContext context) throws FrameworkException {
-
         context.setSubject(null);
         context.setStateInfo(null);
         context.setExternalIdP(null);
@@ -769,6 +774,35 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
         context.setRetryCount(0);
         context.setRetrying(false);
         context.setCurrentAuthenticator(null);
+    }
+
+    /**
+     * Returns the local claim uri that is mapped for the IdP role claim uri configured.
+     * If no role claim uri is configured for the IdP returns the local role claim 'http://wso2.org/claims/role'.
+     *
+     * @param externalIdPConfig IdP configurations
+     * @return local claim uri mapped for the IdP role claim uri.
+     * @throws FrameworkException
+     */
+    protected String getLocalClaimUriMappedForIdPRoleClaim(ExternalIdPConfig externalIdPConfig) throws
+            FrameworkException {
+        // get external identity provider role claim uri.
+        String idpRoleClaimUri = externalIdPConfig.getRoleClaimUri();
+        if (StringUtils.isNotBlank(idpRoleClaimUri)) {
+            // Iterate over IdP claim mappings and check for the local claim that is mapped for the remote IdP role
+            // claim uri configured.
+            ClaimMapping[] idpToLocalClaimMapping = externalIdPConfig.getClaimMappings();
+            if (!ArrayUtils.isEmpty(idpToLocalClaimMapping)) {
+                for (ClaimMapping mapping : idpToLocalClaimMapping) {
+                    if (mapping.getRemoteClaim() != null && idpRoleClaimUri.equals(mapping.getRemoteClaim()
+                            .getClaimUri())) {
+                        return mapping.getLocalClaim().getClaimUri();
+                    }
+                }
+            }
+        }
+
+        return FrameworkConstants.LOCAL_ROLE_CLAIM_URI;
     }
 
 }

@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.LocalAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.RequestPathAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.application.mgt.internal.ApplicationManagementServiceComponentHolder;
 
 import java.util.ArrayList;
 
@@ -262,4 +263,12 @@ public class ApplicationManagementAdminService extends AbstractAdmin {
         }
     }
 
+    /**
+     * Retrieve the set of authentication templates configured from file system in JSON format
+     * @return Authentication templates.
+     */
+    public String getAuthenticationTemplatesJSON() {
+
+        return ApplicationManagementServiceComponentHolder.getInstance().getAuthenticationTemplatesJson();
+    }
 }
