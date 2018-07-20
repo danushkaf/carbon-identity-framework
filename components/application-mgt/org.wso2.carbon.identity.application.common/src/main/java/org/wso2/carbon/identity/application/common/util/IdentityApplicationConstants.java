@@ -69,8 +69,14 @@ public class IdentityApplicationConstants {
     public static final String UNIQUE_ID_CONSTANT = "UniqueID";
     public static final String PASSWORD = "password";
     public static final String RANDOM_PHRASE_PREFIX = "random-password-generated!@#$%^&*(0)+_";
+    public static final String AS_IN_USERNAME_USERSTORE_FOR_JIT = "As in username";
 
     public static final String REDIRECT_TO_MULTI_OPTION_PAGE_ON_FAILURE = "redirectToMultiOptionPageOnFailure";
+
+    // JustInTimeProviderConfigElements
+    public static final String IS_PASSWORD_PROVISIONING_ENABLED_ELEMENT = "IsPasswordProvisioningEnabled";
+    public static final String ALLOW_MODIFY_USERNAME_ELEMENT = "AllowModifyUserName";
+    public static final String PROMPT_CONSENT_ELEMENT = "PromptConsent";
 
     public static class ConfigElements {
         public static final String PROPERTIES = "Properties";
@@ -79,6 +85,7 @@ public class IdentityApplicationConstants {
         public static final String ATTR_ENABLED = "enabled";
         public static final String PROPERTY_TYPE_STRING = "STRING";
         public static final String PROPERTY_TYPE_BLOB = "BLOB";
+        public static final String PROPERTY_SP_DIALECT = "SPClaimDialects";
 
         private ConfigElements() {
             throw new AssertionError("Must not initiate an object of ConfigElements class");
@@ -136,7 +143,10 @@ public class IdentityApplicationConstants {
 
             public static final String UNSPECIFIED_NAME_ID_FORMAT =
                     "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified";
-
+            public static final String IS_ARTIFACT_BINDING_ENABLED = "ISArtifactBindingEnabled";
+            public static final String ARTIFACT_RESOLVE_URL="ArtifactResolveUrl";
+            public static final String IS_ARTIFACT_RESOLVE_REQ_SIGNED = "ISArtifactResolveReqSigned";
+            public static final String IS_ARTIFACT_RESPONSE_SIGNED = "ISArtifactResponseSigned";
 
             private SAML2SSO() {
                 throw new AssertionError("Must not initiate an object of SAMLSSO class");
@@ -151,6 +161,7 @@ public class IdentityApplicationConstants {
             public static final String OIDC_CHECK_SESSION_URL = "OIDCCheckSessionEPUrl";
             public static final String OIDC_LOGOUT_URL = "OIDCLogoutEPUrl";
             public static final String IS_USER_ID_IN_CLAIMS = "IsUserIdInClaims";
+            public static final String IS_BASIC_AUTH_ENABLED = "IsBasicAuthEnabled";
         }
 
         public static class PassiveSTS {

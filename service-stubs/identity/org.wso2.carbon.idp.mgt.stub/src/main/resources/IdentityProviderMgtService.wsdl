@@ -33,6 +33,7 @@
                     <xs:element maxOccurs="unbounded" minOccurs="0" name="idpClaims" nillable="true" type="ax2468:Claim"/>
                     <xs:element minOccurs="0" name="localClaimDialect" type="xs:boolean"/>
                     <xs:element minOccurs="0" name="roleClaimURI" nillable="true" type="xs:string"/>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="spClaimDialects" nillable="true" type="xs:string"/>
                     <xs:element minOccurs="0" name="userClaimURI" nillable="true" type="xs:string"/>
                 </xs:sequence>
             </xs:complexType>
@@ -102,6 +103,9 @@
                 <xs:complexContent>
                     <xs:extension base="ax2468:InboundProvisioningConfig">
                         <xs:sequence>
+                            <xs:element minOccurs="0" name="modifyUserNameAllowed" type="xs:boolean" nillable="true"/>
+                            <xs:element minOccurs="0" name="passwordProvisioningEnabled" type="xs:boolean" nillable="true"/>
+                            <xs:element minOccurs="0" name="promptConsent" type="xs:boolean" nillable="true"/>
                             <xs:element minOccurs="0" name="userStoreClaimUri" nillable="true" type="xs:string"/>
                         </xs:sequence>
                     </xs:extension>

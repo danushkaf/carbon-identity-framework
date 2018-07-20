@@ -35,6 +35,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.AbstractInboundAuthenticatorConfig;
 import org.wso2.carbon.identity.application.mgt.ApplicationConstants;
@@ -179,6 +180,23 @@ public class ApplicationManagementServiceComponent {
         ApplicationManagementServiceComponentHolder.removeInboundAuthenticatorConfig(authenticator.getName());
     }
 
+    @Reference(
+            name = "consent.mgt.service",
+            service = ConsentManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetConsentMgtService"
+    )
+    protected void setConsentMgtService(ConsentManager consentManager) {
+
+        ApplicationManagementServiceComponentHolder.getInstance().setConsentManager(consentManager);
+    }
+
+    protected void unsetConsentMgtService(ConsentManager consentManager) {
+
+        ApplicationManagementServiceComponentHolder.getInstance().setConsentManager(null);
+    }
+
     private void buildFileBasedSPList() {
         String spConfigDirPath = CarbonUtils.getCarbonConfigDirPath() + File.separator + "identity"
                 + File.separator + "service-providers";
@@ -236,6 +254,9 @@ public class ApplicationManagementServiceComponent {
                                 }
                                 JSONArray categoryTemplateArray = templatesJsonObject.getJSONArray(category);
                                 categoryTemplateArray.put(templateObject);
+                            } else {
+                                log.warn(String.format("Script template in file %s is missing category information. " +
+                                    "Hence it will be ignored.", jsonFile.getName()));
                             }
                             if (log.isDebugEnabled()) {
                                 log.debug("Authentication template file loaded from: " + jsonFile.getName());

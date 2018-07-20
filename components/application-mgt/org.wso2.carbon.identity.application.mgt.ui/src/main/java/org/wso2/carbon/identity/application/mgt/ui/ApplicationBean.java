@@ -20,12 +20,17 @@ package org.wso2.carbon.identity.application.mgt.ui;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.script.xsd.AuthenticationScriptConfig;
 import org.wso2.carbon.identity.application.common.model.xsd.ApplicationPermission;
 import org.wso2.carbon.identity.application.common.model.xsd.AuthenticationStep;
 import org.wso2.carbon.identity.application.common.model.xsd.Claim;
 import org.wso2.carbon.identity.application.common.model.xsd.ClaimConfig;
 import org.wso2.carbon.identity.application.common.model.xsd.ClaimMapping;
+import org.wso2.carbon.identity.application.common.model.xsd.ConsentConfig;
+import org.wso2.carbon.identity.application.common.model.xsd.ConsentPurpose;
+import org.wso2.carbon.identity.application.common.model.xsd.ConsentPurposeConfigs;
 import org.wso2.carbon.identity.application.common.model.xsd.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.xsd.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.xsd.InboundAuthenticationConfig;
@@ -42,13 +47,15 @@ import org.wso2.carbon.identity.application.common.model.xsd.ProvisioningConnect
 import org.wso2.carbon.identity.application.common.model.xsd.RequestPathAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.xsd.RoleMapping;
 import org.wso2.carbon.identity.application.common.model.xsd.ServiceProvider;
+import org.wso2.carbon.identity.application.mgt.ui.util.ApplicationMgtUIConstants;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 public class ApplicationBean {
 
@@ -81,8 +88,12 @@ public class ApplicationBean {
     private String passiveSTSWReply;
     private String openid;
     private String[] claimUris;
+    private List<String> claimDialectUris;
     private List<InboundAuthenticationRequestConfig> inboundAuthenticationRequestConfigs;
     private List<String> standardInboundAuthTypes;
+    private ConsentConfig consentConfig;
+
+    Log log = LogFactory.getLog(ApplicationBean.class);
 
     public ApplicationBean() {
         standardInboundAuthTypes = new ArrayList<String>();
@@ -114,6 +125,7 @@ public class ApplicationBean {
         attrConsumServiceIndex = null;
         enabledFederatedIdentityProviders = null;
         inboundAuthenticationRequestConfigs = Collections.EMPTY_LIST;
+        consentConfig = null;
     }
 
     /**
@@ -853,6 +865,38 @@ public class ApplicationBean {
         this.claimUris = claimUris;
     }
 
+    /**
+     * Get service provider claim dialects.
+     *
+     * @return claim dialects of service provider
+     */
+    public List<String> getSPClaimDialects() {
+
+        return serviceProvider.getClaimConfig() != null && !ArrayUtils.isEmpty(serviceProvider.getClaimConfig()
+                .getSpClaimDialects()) ? Arrays.asList(serviceProvider.getClaimConfig().getSpClaimDialects()) :
+                new ArrayList<>();
+    }
+
+    /**
+     * Set claim dialects Uris.
+     *
+     * @param claimDialectUris list of claim dialect Uris
+     */
+    public void setClaimDialectUris(List<String> claimDialectUris) {
+
+        this.claimDialectUris = claimDialectUris;
+    }
+
+    /**
+     * Get claim dialects Uris.
+     *
+     * @return list of claim dialect Uris
+     */
+    public List<String> getClaimDialectUris() {
+
+        return claimDialectUris;
+    }
+
 
     private boolean isCustomInboundAuthType(String authType) {
         return !standardInboundAuthTypes.contains(authType);
@@ -890,7 +934,7 @@ public class ApplicationBean {
      * @param request
      */
     public void updateOutBoundAuthenticationConfig(HttpServletRequest request) {
-        
+
         String[] authSteps = request.getParameterValues("auth_step");
 
         if (authSteps != null && authSteps.length > 0) {
@@ -1376,6 +1420,14 @@ public class ApplicationBean {
             }
         }
 
+        String spClaimDialectParam = request.getParameter(ApplicationMgtUIConstants.Params.SP_CLAIM_DIALECT);
+        String[] spClaimDialects = null;
+        if (StringUtils.isNotBlank(spClaimDialectParam)) {
+            spClaimDialects = spClaimDialectParam.split(",");
+
+        }
+        serviceProvider.getClaimConfig().setSpClaimDialects(spClaimDialects);
+
         serviceProvider.getClaimConfig().setClaimMappings(
                 claimMappingList.toArray(new ClaimMapping[claimMappingList.size()]));
 
@@ -1386,6 +1438,13 @@ public class ApplicationBean {
                 alwaysSendMappedLocalSubjectId != null
                 && "on".equals(alwaysSendMappedLocalSubjectId) ? true : false);
 
+        // TODO: Update the configs from request once the SP consent purpose UI is implemented.
+        ConsentConfig consentConfig = new ConsentConfig();
+        ConsentPurposeConfigs consentPurposeConfigs = new ConsentPurposeConfigs();
+        consentPurposeConfigs.setConsentPurpose(new ConsentPurpose[0]);
+        consentConfig.setConsentPurposeConfigs(consentPurposeConfigs);
+
+        serviceProvider.setConsentConfig(consentConfig);
     }
 
     /**

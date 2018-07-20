@@ -945,7 +945,8 @@ jQuery('#includeAuthnCtxReq').click(function () {
 
 
 jQuery('#logoutRequestSigned').click(function () {
-    if (jQuery(this).is(":checked") || jQuery("#authnRequestSigned").is(":checked")) {
+    if (jQuery(this).is(":checked") || jQuery("#authnRequestSigned").is(":checked") ||
+        (jQuery("#enableArtifactBinding").is(":checked") && jQuery("#artifactResolveReqSigned").is(":checked"))) {
         jQuery('#signature_algorithem_dropdown').removeAttr('disabled');
         jQuery('#digest_algorithem_dropdown').removeAttr('disabled');
     } else {
@@ -965,7 +966,8 @@ jQuery('#includeAuthnCtxYes').click(function () {
 });
 
 jQuery('#authnRequestSigned').click(function () {
-    if (jQuery(this).is(":checked") || jQuery("#logoutRequestSigned").is(":checked")) {
+    if (jQuery(this).is(":checked") || jQuery("#logoutRequestSigned").is(":checked") ||
+        (jQuery("#enableArtifactBinding").is(":checked") && jQuery("#artifactResolveReqSigned").is(":checked"))) {
         jQuery('#signature_algorithem_dropdown').removeAttr('disabled');
         jQuery('#digest_algorithem_dropdown').removeAttr('disabled');
     } else {
@@ -998,9 +1000,15 @@ jQuery('#roleMappingDeleteLink').click(function () {
 });
 jQuery('#provision_disabled').click(function () {
     jQuery('#provision_static_dropdown').attr('disabled', 'disabled');
+    $('input[name=choose_jit_type_group]').attr('disabled', 'disabled');
 });
 jQuery('#provision_static').click(function () {
     jQuery('#provision_static_dropdown').removeAttr('disabled');
+    $('input[name=choose_jit_type_group]').removeAttr('disabled');
+});
+
+jQuery('#password_provisioning').click(function () {
+    jQuery('#modify_username').removeAttr('disabled');
 });
 
 
@@ -1054,5 +1062,32 @@ jQuery('#roleAddLink').click(function () {
         '</a></td></tr>'));
     if ($(jQuery('#roleAddTable tr')).length == 2) {
         $(jQuery('#roleAddTable')).toggle();
+    }
+});
+
+jQuery('#artifactResolveReqSigned').click(function() {
+    if (jQuery(this).is(":checked") || jQuery("#authnRequestSigned").is(":checked") ||
+        jQuery("#logoutRequestSigned").is(":checked")) {
+        jQuery('#signature_algorithem_dropdown').removeAttr('disabled');
+        jQuery('#digest_algorithem_dropdown').removeAttr('disabled');
+    } else {
+        jQuery('#signature_algorithem_dropdown').attr('disabled', true);
+        jQuery('#digest_algorithem_dropdown').attr('disabled', true);
+    }
+});
+
+jQuery('#enableArtifactBinding').click(function() {
+    if ((jQuery(this).is(":checked") && jQuery("#artifactResolveReqSigned").is(":checked")) ||
+        jQuery("#authnRequestSigned").is(":checked") ||
+        jQuery("#logoutRequestSigned").is(":checked")) {
+        jQuery('#signature_algorithem_dropdown').removeAttr('disabled');
+        jQuery('#digest_algorithem_dropdown').removeAttr('disabled');
+    } else if (!jQuery(this).is(":checked") && (jQuery("#authnRequestSigned").is(":checked") ||
+        jQuery("#logoutRequestSigned").is(":checked"))) {
+        jQuery('#signature_algorithem_dropdown').removeAttr('disabled');
+        jQuery('#digest_algorithem_dropdown').removeAttr('disabled');
+    } else {
+        jQuery('#signature_algorithem_dropdown').attr('disabled', true);
+        jQuery('#digest_algorithem_dropdown').attr('disabled', true);
     }
 });
